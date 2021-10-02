@@ -12,6 +12,7 @@ declare global {
     let plantUpperQueenbeetRingAround: (x: number, y: number) => void;
     let countPlant: (plantId: number) => number;
     let simpleRingsStrategy: () => boolean;
+    let fusedRingsStrategy: () => boolean;
     let staggeredRingsStrategy: () => boolean;
     let runJQBAttempt: () => boolean;
 }
@@ -27,6 +28,7 @@ function init() {
     }
 
     plantQueenbeet = (x: number, y: number) => {
+        if(M.plot[y][x][0] > 0) return;
         M.useTool(queenbeetId, x, y);
     }
 
@@ -103,6 +105,19 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
+    fusedRingsStrategy = () => {
+        M.harvestAll();
+        plantQueenbeetRingAround(1, 1);
+        plantQueenbeetRingAround(3, 1);
+        plantQueenbeetRingAround(1, 3);
+        plantQueenbeetRingAround(3, 3);
+
+        while(countPlant(queenbeetId) > 0) {
+            tickGarden();
+        }
+        return countPlant(jqbId) > 0;
+    }
+
     staggeredRingsStrategy = () => {
         M.harvestAll();
 
@@ -122,7 +137,7 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    runJQBAttempt = staggeredRingsStrategy;
+    runJQBAttempt = fusedRingsStrategy;
 }
 
 async function run1kAttempts() {
