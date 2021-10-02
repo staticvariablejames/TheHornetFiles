@@ -16,6 +16,7 @@ declare global {
     let staggeredRingsStrategy: () => boolean;
     let inverseStaggeredRingsStrategy: () => boolean;
     let fusedSemistaggeredRingsStrategy: () => boolean;
+    let semifusedStaggeredRingsStrategy: () => boolean;
     let runJQBAttempt: () => boolean;
 }
 
@@ -179,7 +180,27 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    runJQBAttempt = fusedSemistaggeredRingsStrategy;
+    semifusedStaggeredRingsStrategy = () => {
+        M.harvestAll();
+
+        plantLowerQueenbeetRingAround(1, 4);
+        plantLowerQueenbeetRingAround(3, 3);
+        tickGarden();
+        plantUpperQueenbeetRingAround(1, 4);
+        plantUpperQueenbeetRingAround(3, 3);
+        plantLowerQueenbeetRingAround(1, 2);
+        plantLowerQueenbeetRingAround(3, 1);
+        tickGarden();
+        plantUpperQueenbeetRingAround(1, 2);
+        plantUpperQueenbeetRingAround(3, 1);
+
+        while(countPlant(queenbeetId) > 0) {
+            tickGarden();
+        }
+        return countPlant(jqbId) > 0;
+    }
+
+    runJQBAttempt = semifusedStaggeredRingsStrategy;
 }
 
 async function run1kAttempts() {
