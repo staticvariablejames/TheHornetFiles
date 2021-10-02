@@ -87,6 +87,9 @@ async function run1kAttempts() {
                 },
             },
         },
+        achievements: [
+            'Seedless to nay',
+        ],
     }});
     await page.waitForFunction(() => Game.isMinigameReady(Game.Objects['Farm']));
 
