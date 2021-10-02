@@ -1,0 +1,14 @@
+{
+  "name": "thehornetfiles",
+  "version": "0.0.0",
+  "description": "Collection of tools to analyze the Garden minigame.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cookie-clicker"
+  ],
+  "author": "Static Variable James",
+  "license": "GPL-3.0-or-later"
+}
