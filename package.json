@@ -3,12 +3,20 @@
   "version": "0.0.0",
   "description": "Collection of tools to analyze the Garden minigame.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "build": "npx tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "cookie-clicker"
   ],
   "author": "Static Variable James",
-  "license": "GPL-3.0-or-later"
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@types/cookieclicker": "^2.31.5",
+    "cookie-connoisseur": "0.2.0",
+    "playwright": "^1.15.1",
+    "typescript": "^4.4.3"
+  }
 }
