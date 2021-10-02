@@ -8,7 +8,11 @@ declare global {
     let tickGarden: () => void;
     let plantQueenbeet: (x: number, y: number) => void;
     let plantQueenbeetRingAround: (x: number, y: number) => void;
+    let plantLowerQueenbeetRingAround: (x: number, y: number) => void;
+    let plantUpperQueenbeetRingAround: (x: number, y: number) => void;
     let countPlant: (plantId: number) => number;
+    let simpleRingsStrategy: () => boolean;
+    let staggeredRingsStrategy: () => boolean;
     let runJQBAttempt: () => boolean;
 }
 
@@ -44,6 +48,36 @@ function init() {
         }
     }
 
+    plantLowerQueenbeetRingAround = (x: number, y: number) => {
+        if(x <= 0 || x >= 5) {
+            console.log(`Refusing to plant around ${x}, ${y}`);
+            return;
+        }
+        if(y <= 0 || y >= 5) {
+            console.log(`Refusing to plant around ${x}, ${y}`);
+            return;
+        }
+        plantQueenbeet(x-1, y+1);
+        plantQueenbeet(x,   y+1);
+        plantQueenbeet(x+1, y+1);
+        plantQueenbeet(x+1, y);
+    }
+
+    plantUpperQueenbeetRingAround = (x: number, y: number) => {
+        if(x <= 0 || x >= 5) {
+            console.log(`Refusing to plant around ${x}, ${y}`);
+            return;
+        }
+        if(y <= 0 || y >= 5) {
+            console.log(`Refusing to plant around ${x}, ${y}`);
+            return;
+        }
+        plantQueenbeet(x-1, y);
+        plantQueenbeet(x-1, y-1);
+        plantQueenbeet(x,   y-1);
+        plantQueenbeet(x+1, y-1);
+    }
+
     countPlant = (plantId: number) => {
         let count = 0;
         for(let i = 0; i < 6; i++) {
@@ -56,7 +90,7 @@ function init() {
         return count;
     }
 
-    runJQBAttempt = () => {
+    simpleRingsStrategy = () => {
         M.harvestAll();
         plantQueenbeetRingAround(1, 1);
         plantQueenbeetRingAround(4, 1);
@@ -68,6 +102,27 @@ function init() {
         }
         return countPlant(jqbId) > 0;
     }
+
+    staggeredRingsStrategy = () => {
+        M.harvestAll();
+
+        plantLowerQueenbeetRingAround(1, 1);
+        plantLowerQueenbeetRingAround(4, 1);
+        plantLowerQueenbeetRingAround(1, 4);
+        plantLowerQueenbeetRingAround(4, 4);
+        tickGarden();
+        plantUpperQueenbeetRingAround(1, 1);
+        plantUpperQueenbeetRingAround(4, 1);
+        plantUpperQueenbeetRingAround(1, 4);
+        plantUpperQueenbeetRingAround(4, 4);
+
+        while(countPlant(queenbeetId) > 0) {
+            tickGarden();
+        }
+        return countPlant(jqbId) > 0;
+    }
+
+    runJQBAttempt = staggeredRingsStrategy;
 }
 
 async function run1kAttempts() {
