@@ -11,23 +11,53 @@ declare global {
     let plantLowerQueenbeetRingAround: (x: number, y: number) => void;
     let plantUpperQueenbeetRingAround: (x: number, y: number) => void;
     let countPlant: (plantId: number) => number;
-    let simpleRingsStrategy: () => boolean;
-    let fusedRingsStrategy: () => boolean;
-    let staggeredRingsStrategy: () => boolean;
-    let inverseStaggeredRingsStrategy: () => boolean;
-    let fusedSemistaggeredRingsStrategy: () => boolean;
-    let semifusedStaggeredRingsStrategy: () => boolean;
-    let runJQBAttempt: () => boolean;
+    let strategies: Record<string, () => boolean>;
+    let currentStrategy: () => boolean;
 }
 
-function init() {
+class Options {
+    strategy: string = '';
+    seedlessToNay: boolean = true;
+    weedNonJQB: boolean = false;
+}
+
+function processCommandLineArgs(argv: string[]) {
+    let options = new Options();
+    while(argv.length > 0) {
+        let arg = argv.shift();
+        if(arg!.substring(0, 2) != '--') {
+            options.strategy = arg!;
+            continue;
+        }
+        switch(arg) {
+            case '--seedless-to-nay':    options.seedlessToNay = true;  break;
+            case '--no-seedless-to-nay': options.seedlessToNay = false; break;
+            case '--weed-non-jqb':       options.weedNonJQB = true;     break;
+            case '--no-weed-non-jqb':    options.weedNonJQB = false;    break;
+            default: throw new Error(`Unrecognized option ${arg}`);
+        }
+    }
+
+    return options;
+}
+
+function init(options: Options) {
     M = Game.Objects.Farm.minigame;
     queenbeetId = Game.Objects.Farm.minigame.plants['queenbeet'].id;
     jqbId = Game.Objects.Farm.minigame.plants['queenbeetLump'].id;
+    strategies = {};
 
     tickGarden = () => {
         M.nextStep = 1.6e12;
         M.logic!();
+        if(!options.weedNonJQB) return;
+        for(let y = 0; y < 6; y++) {
+            for(let x = 0; x < 0; x++) {
+                if(M.plot[y][x][0] != queenbeetId+1 || M.plot[y][x][0] != jqbId+1) {
+                    M.harvest(x,y,undefined);
+                }
+            }
+        }
     }
 
     plantQueenbeet = (x: number, y: number) => {
@@ -95,7 +125,7 @@ function init() {
         return count;
     }
 
-    simpleRingsStrategy = () => {
+    strategies['simpleRings'] = () => {
         M.harvestAll();
         plantQueenbeetRingAround(1, 1);
         plantQueenbeetRingAround(4, 1);
@@ -108,7 +138,7 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    fusedRingsStrategy = () => {
+    strategies['fusedRings'] = () => {
         M.harvestAll();
         plantQueenbeetRingAround(1, 1);
         plantQueenbeetRingAround(3, 1);
@@ -121,7 +151,7 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    staggeredRingsStrategy = () => {
+    strategies['staggeredRings'] = () => {
         M.harvestAll();
 
         plantLowerQueenbeetRingAround(1, 1);
@@ -140,7 +170,7 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    inverseStaggeredRingsStrategy = () => {
+    strategies['inverseStaggeredRings'] = () => {
         M.harvestAll();
 
         plantUpperQueenbeetRingAround(1, 1);
@@ -159,7 +189,7 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    fusedSemistaggeredRingsStrategy = () => {
+    strategies['fusedSemistaggeredRings'] = () => {
         M.harvestAll();
 
         plantQueenbeet(0, 4);
@@ -180,7 +210,7 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    semifusedStaggeredRingsStrategy = () => {
+    strategies['semifusedStaggeredRings'] = () => {
         M.harvestAll();
 
         plantLowerQueenbeetRingAround(1, 4);
@@ -200,10 +230,16 @@ function init() {
         return countPlant(jqbId) > 0;
     }
 
-    runJQBAttempt = semifusedStaggeredRingsStrategy;
+    if(options.strategy in strategies) {
+        currentStrategy = strategies[options.strategy];
+    } else {
+        throw new Error(`Unknown strategy ${options.strategy}`);
+    }
 }
 
-async function run1kAttempts() {
+async function run1kAttempts(options: Options) {
+    let achievements = options.seedlessToNay? ['Seedless to nay'] : [];
+
     let browser = await chromium.launch({headless: true});
     let page = await openCookieClickerPage(browser, {saveGame: {
         cookies: 1e100,
@@ -220,16 +256,14 @@ async function run1kAttempts() {
                 },
             },
         },
-        achievements: [
-            'Seedless to nay',
-        ],
+        achievements,
     }});
     await page.waitForFunction(() => Game.isMinigameReady(Game.Objects['Farm']));
 
-    await page.evaluate(init);
+    await page.evaluate(init, options);
     let successes = 0;
     for(let i = 0; i < 1000; i++) {
-        successes += Number(await page.evaluate(() => runJQBAttempt()));
+        successes += Number(await page.evaluate(() => currentStrategy()));
     }
 
     await page.close();
@@ -238,9 +272,12 @@ async function run1kAttempts() {
 }
 
 setTimeout(async () => {
+    let args = process.argv.slice(2);
+    console.log(`Running experiment with arguments: ${args}`);
+    let options = processCommandLineArgs(args);
     let total = 0;
     for(let i = 0; i < 100; i++) {
-        let successes = await run1kAttempts();
+        let successes = await run1kAttempts(options);
         console.log(`Attempt ${i+1}: ${successes}`);
         total += successes;
     }
