@@ -21,6 +21,7 @@ class Options {
     strategy: string = '';
     seedlessToNay: boolean = true;
     weedNonJQB: boolean = false;
+    supremeIntellect: boolean = false;
 }
 
 function processCommandLineArgs(argv: string[]) {
@@ -32,10 +33,12 @@ function processCommandLineArgs(argv: string[]) {
             continue;
         }
         switch(arg) {
-            case '--seedless-to-nay':    options.seedlessToNay = true;  break;
-            case '--no-seedless-to-nay': options.seedlessToNay = false; break;
-            case '--weed-non-jqb':       options.weedNonJQB = true;     break;
-            case '--no-weed-non-jqb':    options.weedNonJQB = false;    break;
+            case '--seedless-to-nay':       options.seedlessToNay = true;       break;
+            case '--no-seedless-to-nay':    options.seedlessToNay = false;      break;
+            case '--weed-non-jqb':          options.weedNonJQB = true;          break;
+            case '--no-weed-non-jqb':       options.weedNonJQB = false;         break;
+            case '--supreme-intellect':     options.supremeIntellect = true;    break;
+            case '--no-supreme-intellect':  options.supremeIntellect = false;   break;
             default: throw new Error(`Unrecognized option ${arg}`);
         }
     }
@@ -296,6 +299,8 @@ async function run1kAttempts(options: Options) {
             showBackupWarning: false,
             timeout: false,
         },
+        dragonAura: options.supremeIntellect ? 18 : 0, // Reality Bending
+        dragonAura2: options.supremeIntellect ? 20 : 0, // Supreme Intellect
         buildings: {
             'Farm': {
                 amount: 300,
