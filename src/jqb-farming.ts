@@ -11,6 +11,8 @@ declare global {
     let plantLowerQueenbeetRingAround: (x: number, y: number) => void;
     let plantUpperQueenbeetRingAround: (x: number, y: number) => void;
     let countPlant: (plantId: number) => number;
+    let countPlantsAround: (plantId: number, x: number, y: number) => number;
+    let countQBrings: () => number;
     let strategies: Record<string, () => boolean>;
     let currentStrategy: () => boolean;
 }
@@ -61,8 +63,8 @@ function init(options: Options) {
     }
 
     plantQueenbeet = (x: number, y: number) => {
-        if(M.plot[y][x][0] > 0) return;
-        M.useTool(queenbeetId, x, y);
+        if(M.plot[y][x][0] == queenbeetId+1) return;
+        M.plot[y][x] = [queenbeetId+1, 0];
     }
 
     plantQueenbeetRingAround = (x: number, y: number) => {
@@ -125,6 +127,34 @@ function init(options: Options) {
         return count;
     }
 
+    countPlantsAround = (plantId: number, x: number, y: number) => {
+        if(x <= 0 || x >= 5) {
+            console.log(`Refusing to count around ${x}, ${y}`);
+            return 0;
+        }
+        if(y <= 0 || y >= 5) {
+            console.log(`Refusing to count around ${x}, ${y}`);
+            return 0;
+        }
+        let count = 0;
+        count += Number(M.plot[x-1][y-1][0] == plantId + 1);
+        count += Number(M.plot[x-1][y  ][0] == plantId + 1);
+        count += Number(M.plot[x-1][y+1][0] == plantId + 1);
+        count += Number(M.plot[x  ][y-1][0] == plantId + 1);
+        count += Number(M.plot[x  ][y+1][0] == plantId + 1);
+        count += Number(M.plot[x+1][y-1][0] == plantId + 1);
+        count += Number(M.plot[x+1][y  ][0] == plantId + 1);
+        count += Number(M.plot[x+1][y+1][0] == plantId + 1);
+        return count;
+    }
+
+    countQBrings = () => {
+        return Number(countPlantsAround(queenbeetId, 1, 1) >= 8) +
+            Number(countPlantsAround(queenbeetId, 1, 4) >= 8) +
+            Number(countPlantsAround(queenbeetId, 4, 1) >= 8) +
+            Number(countPlantsAround(queenbeetId, 4, 4) >= 8);
+    }
+
     strategies['simpleRings'] = () => {
         M.harvestAll();
         plantQueenbeetRingAround(1, 1);
@@ -135,6 +165,10 @@ function init(options: Options) {
         while(countPlant(queenbeetId) > 0) {
             tickGarden();
         }
+        //  countPlantsAround(queenbeetId, 1, 1) >= 8 ||
+        //  countPlantsAround(queenbeetId, 1, 4) >= 8 ||
+        //  countPlantsAround(queenbeetId, 4, 1) >= 8 ||
+        //  countPlantsAround(queenbeetId, 4, 4) >= 8
         return countPlant(jqbId) > 0;
     }
 
@@ -167,6 +201,10 @@ function init(options: Options) {
         while(countPlant(queenbeetId) > 0) {
             tickGarden();
         }
+        //  countPlantsAround(queenbeetId, 1, 1) >= 8 ||
+        //  countPlantsAround(queenbeetId, 1, 4) >= 8 ||
+        //  countPlantsAround(queenbeetId, 4, 1) >= 8 ||
+        //  countPlantsAround(queenbeetId, 4, 4) >= 8
         return countPlant(jqbId) > 0;
     }
 
@@ -243,6 +281,21 @@ async function run1kAttempts(options: Options) {
     let browser = await chromium.launch({headless: true});
     let page = await openCookieClickerPage(browser, {saveGame: {
         cookies: 1e100,
+        prefs: {
+            particles: false,
+            numbers: false,
+            autosave: false,
+            autoupdate: false,
+            milk: false,
+            fancy: false,
+            warn: false,
+            cursors: false,
+            focus: true,
+            wobbly: false,
+            filters: false,
+            showBackupWarning: false,
+            timeout: false,
+        },
         buildings: {
             'Farm': {
                 amount: 300,
@@ -253,6 +306,7 @@ async function run1kAttempts(options: Options) {
                         'bakerWheat',
                         'queenbeet',
                     ],
+                    onMinigame: false,
                 },
             },
         },
